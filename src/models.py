@@ -1,6 +1,6 @@
 import os
 import sys
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, Text, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
@@ -8,23 +8,53 @@ from eralchemy import render_er
 
 Base = declarative_base()
 
-class Person(Base):
-    __tablename__ = 'person'
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
-    id = Column(Integer, primary_key=True)
-    name = Column(String(250), nullable=False)
+association_like_post = Table('association_like_post', Base.metadata,
+    Column('user_id', ForeignKey('user.id'), primary_key=True),
+    Column('post_id', ForeignKey('post.id'), primary_key=True)
+)
 
-class Address(Base):
-    __tablename__ = 'address'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
+class User(Base):
+    __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
-    street_name = Column(String(250))
-    street_number = Column(String(250))
-    post_code = Column(String(250), nullable=False)
-    person_id = Column(Integer, ForeignKey('person.id'))
-    person = relationship(Person)
+    email = Column(String(250), nullable=False)
+    nombre = Column(String(250), nullable=False)
+    apellido = Column(String(250), nullable=False)
+    nacimiento = Column(String(250), nullable=False)
+    lista_seguidores = relationship("Seguidores", back_populates="user")
+    post_id = Column(Integer, ForeignKey('post.id'))
+    post = relationship("Post")
+    comment_id = Column(Integer, ForeignKey('comment.id'))
+    comment = relationship("Comment")
+    likes = relationship(
+        "Post",
+        secondary=association_like_post,
+        back_populates="users_like")
+
+    
+class Seguidores(Base):
+    __tablename__ = 'lista_seguidores'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship("User", back_populates="lista_seguidores")
+
+
+class Post(Base):
+    __tablename__ = 'post'
+    id = Column(Integer, primary_key=True)
+    contenido = Column(Text)
+    comment_id = Column(Integer, ForeignKey('comment.id'))
+    comment = relationship("Comment")
+    users_like = relationship(
+        "User",
+        secondary=association_like_post,
+        back_populates="user")
+
+class Comment(Base):
+    __tablename__ = 'comment'
+    id = Column(Integer, primary_key=True)
+    contenido = Column(Text)
+
+
 
     def to_dict(self):
         return {}
